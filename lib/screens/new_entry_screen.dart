@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import '../config/theme.dart';
 import '../models/diary_entry.dart';
 import '../providers/diary_provider.dart';
@@ -18,9 +20,46 @@ class _NewEntryScreenState extends State<NewEntryScreen> {
   Genre _selectedGenre = Genre.noir;
   EntryMode _selectedMode = EntryMode.digital;
   bool _isTransforming = false;
+  bool _isScanning = false;
 
   @override
   void dispose() { _textController.dispose(); super.dispose(); }
+
+  Future<void> _scanImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.camera);
+    if (pickedFile == null) return;
+
+    if (!mounted) return;
+    setState(() => _isScanning = true);
+
+    try {
+      final inputImage = InputImage.fromFilePath(pickedFile.path);
+      final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+      final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
+      await textRecognizer.close();
+
+      if (!mounted) return;
+      setState(() {
+        _textController.text = recognizedText.text;
+        _selectedMode = EntryMode.digital; // Switch automatically to edit scanned text
+        _isScanning = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Text scanned successfully ✨', style: GoogleFonts.inter()),
+        backgroundColor: AppColors.midnightBlue, behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ));
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isScanning = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Failed to read text. Try again.', style: GoogleFonts.inter()),
+        backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ));
+    }
+  }
 
   Future<void> _transform() async {
     if (_textController.text.trim().isEmpty) {
@@ -131,13 +170,19 @@ class _NewEntryScreenState extends State<NewEntryScreen> {
   }
 
   Widget _buildWritingArea() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white, borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.divider.withValues(alpha: 0.5)),
-        boxShadow: [BoxShadow(color: AppColors.charcoal.withValues(alpha: 0.03), blurRadius: 20, offset: const Offset(0, 4))],
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 400),
+      switchInCurve: Curves.easeOut,
+      switchOutCurve: Curves.easeIn,
+      child: Container(
+        key: ValueKey(_selectedMode),
+        decoration: BoxDecoration(
+          color: Colors.white, borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.divider.withValues(alpha: 0.5)),
+          boxShadow: [BoxShadow(color: AppColors.charcoal.withValues(alpha: 0.03), blurRadius: 20, offset: const Offset(0, 4))],
+        ),
+        child: _selectedMode == EntryMode.digital ? _buildTextInput() : _buildScanPlaceholder(),
       ),
-      child: _selectedMode == EntryMode.digital ? _buildTextInput() : _buildScanPlaceholder(),
     );
   }
 
@@ -175,20 +220,60 @@ class _NewEntryScreenState extends State<NewEntryScreen> {
 
   Widget _buildScanPlaceholder() {
     return Container(
-      height: 220, width: double.infinity, padding: const EdgeInsets.all(24),
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Container(width: 72, height: 72,
-          decoration: BoxDecoration(color: AppColors.gold.withValues(alpha: 0.1), shape: BoxShape.circle),
-          child: const Icon(Icons.document_scanner_rounded, size: 36, color: AppColors.gold)),
-        const SizedBox(height: 16),
-        Text('Scan Your Diary Page', style: GoogleFonts.playfairDisplay(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.charcoal)),
-        const SizedBox(height: 8),
-        Text('Take a photo of your handwritten diary\nand AI will convert it to text',
-          style: GoogleFonts.lora(fontSize: 13, color: AppColors.charcoalLight, height: 1.5), textAlign: TextAlign.center),
-        const SizedBox(height: 16),
-        OutlinedButton.icon(onPressed: () {}, icon: const Icon(Icons.camera_alt_rounded, size: 18),
-          label: Text('Open Camera', style: GoogleFonts.inter())),
-      ]),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: AppColors.gold.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.gold.withValues(alpha: 0.3)),
+            ),
+            child: const Icon(Icons.document_scanner_rounded, size: 36, color: AppColors.gold),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Scan Handwritten Diary',
+            style: GoogleFonts.playfairDisplay(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: AppColors.charcoal,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Take a photo of your diary page and AI will magically convert it into digital text.',
+            style: GoogleFonts.lora(
+              fontSize: 14,
+              color: AppColors.charcoalLight.withValues(alpha: 0.8),
+              height: 1.6,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 32),
+          ElevatedButton.icon(
+            onPressed: _isScanning ? null : _scanImage,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.midnightBlue,
+              foregroundColor: AppColors.cream,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              elevation: _isScanning ? 0 : 4,
+            ),
+            icon: _isScanning
+                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.cream))
+                : const Icon(Icons.camera_alt_rounded, size: 20),
+            label: Text(
+              _isScanning ? 'Scanning...' : 'Open Camera',
+              style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

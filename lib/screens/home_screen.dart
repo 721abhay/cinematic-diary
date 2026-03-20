@@ -9,6 +9,7 @@ import '../providers/diary_provider.dart';
 import 'new_entry_screen.dart';
 import 'entry_detail_screen.dart';
 import 'settings_screen.dart';
+import 'explore_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -337,123 +338,165 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ? '${entry.processedProse.substring(0, 120)}...'
         : entry.processedProse;
 
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => EntryDetailScreen(entry: entry),
+    return Dismissible(
+      key: ValueKey(entry.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: AppColors.error,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 24),
+        child: const Icon(Icons.delete_sweep_rounded, color: Colors.white, size: 28),
+      ),
+      confirmDismiss: (_) async {
+        return await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Text('Delete Entry?', style: GoogleFonts.playfairDisplay(fontWeight: FontWeight.bold)),
+            content: Text('This action cannot be undone.', style: GoogleFonts.lora()),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text('Cancel', style: GoogleFonts.inter(color: AppColors.charcoalLight)),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text('Delete', style: GoogleFonts.inter(color: AppColors.error, fontWeight: FontWeight.w600)),
+              ),
+            ],
           ),
         );
       },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border(
-            left: BorderSide(color: genreColor, width: 4),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.charcoal.withValues(alpha: 0.04),
-              blurRadius: 16,
-              offset: const Offset(0, 4),
+      onDismissed: (_) {
+        context.read<DiaryProvider>().deleteEntry(entry.id);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Entry deleted', style: GoogleFonts.inter()),
+          backgroundColor: AppColors.charcoal, behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ));
+      },
+      child: GestureDetector(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => EntryDetailScreen(entry: entry),
             ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: genreColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(entry.genre.emoji, style: const TextStyle(fontSize: 12)),
-                      const SizedBox(width: 4),
-                      Text(
-                        entry.genre.displayName,
-                        style: GoogleFonts.inter(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: genreColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Spacer(),
-                if (entry.isFavorite)
-                  const Icon(
-                    Icons.favorite_rounded,
-                    color: AppColors.romantic,
-                    size: 18,
-                  ),
-                const SizedBox(width: 8),
-                Text(
-                  dateStr,
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    color: AppColors.charcoalLight.withValues(alpha: 0.6),
-                  ),
-                ),
-              ],
+          );
+        },
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border(
+              left: BorderSide(color: genreColor, width: 4),
             ),
-            const SizedBox(height: 14),
-            Text(
-              preview,
-              style: GoogleFonts.lora(
-                fontSize: 14,
-                color: AppColors.charcoal.withValues(alpha: 0.8),
-                height: 1.6,
-                fontStyle: FontStyle.italic,
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.charcoal.withValues(alpha: 0.04),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
               ),
-              maxLines: 4,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Icon(
-                  entry.mode == EntryMode.digital
-                      ? Icons.keyboard_rounded
-                      : Icons.camera_alt_rounded,
-                  size: 14,
-                  color: AppColors.charcoalLight.withValues(alpha: 0.4),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: genreColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(entry.genre.emoji, style: const TextStyle(fontSize: 12)),
+                        const SizedBox(width: 4),
+                        Text(
+                          entry.genre.displayName,
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: genreColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Spacer(),
+                  if (entry.isFavorite)
+                    const Icon(
+                      Icons.favorite_rounded,
+                      color: AppColors.romantic,
+                      size: 18,
+                    ),
+                  const SizedBox(width: 8),
+                  Text(
+                    dateStr,
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      color: AppColors.charcoalLight.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Text(
+                preview,
+                style: GoogleFonts.lora(
+                  fontSize: 14,
+                  color: AppColors.charcoal.withValues(alpha: 0.8),
+                  height: 1.6,
+                  fontStyle: FontStyle.italic,
                 ),
-                const SizedBox(width: 4),
-                Text(
-                  entry.mode == EntryMode.digital ? 'Digital' : 'Scanned',
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
+                maxLines: 4,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(
+                    entry.mode == EntryMode.digital
+                        ? Icons.keyboard_rounded
+                        : Icons.camera_alt_rounded,
+                    size: 14,
                     color: AppColors.charcoalLight.withValues(alpha: 0.4),
                   ),
-                ),
-                const Spacer(),
-                Text(
-                  'Read more →',
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: genreColor,
+                  const SizedBox(width: 4),
+                  Text(
+                    entry.mode == EntryMode.digital ? 'Digital' : 'Scanned',
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      color: AppColors.charcoalLight.withValues(alpha: 0.4),
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                  const Spacer(),
+                  Text(
+                    'Read more →',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: genreColor,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
-      ),
-    )
-        .animate()
-        .fadeIn(delay: (100 * index).ms, duration: 400.ms)
-        .slideY(begin: 0.1, end: 0, delay: (100 * index).ms, duration: 400.ms);
+      )
+          .animate()
+          .fadeIn(delay: (100 * index).ms, duration: 400.ms)
+          .slideY(begin: 0.1, end: 0, delay: (100 * index).ms, duration: 400.ms),
+    );
   }
 
   Widget _buildBottomNav() {
@@ -476,6 +519,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         unselectedItemColor: AppColors.charcoalLight.withValues(alpha: 0.4),
         selectedLabelStyle: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600),
         unselectedLabelStyle: GoogleFonts.inter(fontSize: 11),
+        onTap: (index) {
+          if (index == 2) {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+            );
+          } else if (index == 1) {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const ExploreScreen()),
+            );
+          }
+        },
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.auto_stories_rounded),

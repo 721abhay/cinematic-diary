@@ -54,6 +54,7 @@ class DiaryEntry {
   final String? imageUrl;
   final String language;
   final bool isFavorite;
+  final bool isPublic;
 
   DiaryEntry({
     String? id,
@@ -65,6 +66,7 @@ class DiaryEntry {
     this.imageUrl,
     this.language = 'en',
     this.isFavorite = false,
+    this.isPublic = false,
   })  : id = id ?? const Uuid().v4(),
         timestamp = timestamp ?? DateTime.now();
 
@@ -77,6 +79,7 @@ class DiaryEntry {
     String? imageUrl,
     String? language,
     bool? isFavorite,
+    bool? isPublic,
   }) {
     return DiaryEntry(
       id: id,
@@ -88,6 +91,7 @@ class DiaryEntry {
       imageUrl: imageUrl ?? this.imageUrl,
       language: language ?? this.language,
       isFavorite: isFavorite ?? this.isFavorite,
+      isPublic: isPublic ?? this.isPublic,
     );
   }
 
@@ -102,6 +106,7 @@ class DiaryEntry {
       'imageUrl': imageUrl,
       'language': language,
       'isFavorite': isFavorite,
+      'isPublic': isPublic,
     };
   }
 
@@ -116,6 +121,7 @@ class DiaryEntry {
       imageUrl: json['imageUrl'],
       language: json['language'] ?? 'en',
       isFavorite: json['isFavorite'] ?? false,
+      isPublic: json['isPublic'] ?? false,
     );
   }
 }
