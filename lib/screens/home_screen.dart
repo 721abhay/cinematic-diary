@@ -20,6 +20,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   int _selectedTab = 0;
+  String _searchQuery = '';
   late TabController _tabController;
 
   @override
@@ -64,11 +65,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 SliverToBoxAdapter(
                   child: _buildTabBar(),
                 ),
+                // Search bar
+                SliverToBoxAdapter(
+                  child: _buildSearchBar(),
+                ),
                 // Entries list
-                if (_selectedTab == 0)
-                  _buildEntriesList(provider.entries)
-                else
-                  _buildEntriesList(provider.favoriteEntries),
+                Builder(
+                  builder: (context) {
+                    final sourceList = _selectedTab == 0 ? provider.entries : provider.favoriteEntries;
+                    final filtered = _searchQuery.isEmpty 
+                        ? sourceList 
+                        : sourceList.where((e) => e.rawInput.toLowerCase().contains(_searchQuery.toLowerCase()) || 
+                                                  e.processedProse.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
+                    return _buildEntriesList(filtered);
+                  }
+                ),
               ],
             );
           },
@@ -271,6 +282,36 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               color: isSelected ? AppColors.charcoal : AppColors.charcoalLight,
             ),
             textAlign: TextAlign.center,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.charcoal.withValues(alpha: 0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: TextField(
+          onChanged: (val) => setState(() => _searchQuery = val),
+          style: GoogleFonts.inter(fontSize: 14),
+          decoration: InputDecoration(
+            icon: const Icon(Icons.search_rounded, color: AppColors.charcoalLight, size: 20),
+            hintText: 'Search cinematic memories...',
+            hintStyle: GoogleFonts.inter(fontSize: 14, color: AppColors.charcoalLight.withValues(alpha: 0.5)),
+            border: InputBorder.none,
           ),
         ),
       ),

@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter/foundation.dart';
 import '../models/diary_entry.dart';
 import '../config/supabase_config.dart';
 
@@ -30,7 +31,7 @@ class SupabaseService {
         language: data['language'] ?? 'en',
       )).toList();
     } catch (e) {
-      print('Supabase fetch error: $e');
+      debugPrint('Supabase fetch error: $e');
       return [];
     }
   }
@@ -59,7 +60,7 @@ class SupabaseService {
         language: data['language'] ?? 'en',
       )).toList();
     } catch (e) {
-      print('Supabase explore fetch error: $e');
+      debugPrint('Supabase explore fetch error: $e');
       return [];
     }
   }
@@ -84,7 +85,7 @@ class SupabaseService {
         // 'user_id': client.auth.currentUser?.id,
       });
     } catch (e) {
-      print('Supabase insert error: $e');
+      debugPrint('Supabase insert error: $e');
     }
   }
 
@@ -98,7 +99,7 @@ class SupabaseService {
         'is_public': entry.isPublic,
       }).eq('id', entry.id);
     } catch (e) {
-      print('Supabase update error: $e');
+      debugPrint('Supabase update error: $e');
     }
   }
 
@@ -109,7 +110,7 @@ class SupabaseService {
     try {
       await client.from(_table).delete().eq('id', id);
     } catch (e) {
-      print('Supabase delete error: $e');
+      debugPrint('Supabase delete error: $e');
     }
   }
 }

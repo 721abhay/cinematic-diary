@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../config/theme.dart';
 import '../services/storage_service.dart';
+import '../providers/diary_provider.dart';
 import 'onboarding_screen.dart';
 import 'home_screen.dart';
 
@@ -21,7 +23,12 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _navigate() async {
+    // Start initializing the data in parallel with the splash animation
+    final initFuture = context.read<DiaryProvider>().init();
+    
     await Future.delayed(const Duration(milliseconds: 3000));
+    await initFuture; // Ensure data is loaded before moving on
+    
     if (!mounted) return;
 
     final onboardingDone = await StorageService.isOnboardingComplete();
@@ -29,9 +36,9 @@ class _SplashScreenState extends State<SplashScreen> {
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
-        pageBuilder: (_, __, ___) =>
+        pageBuilder: (context, animation, secondaryAnimation) =>
             onboardingDone ? const HomeScreen() : const OnboardingScreen(),
-        transitionsBuilder: (_, animation, __, child) {
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(opacity: animation, child: child);
         },
         transitionDuration: const Duration(milliseconds: 800),

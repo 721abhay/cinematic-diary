@@ -8,6 +8,6 @@ class SupabaseConfig {
   
   static const String anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNlamNvdnhqem14Y2lqenpwY3R6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMjYwNDgsImV4cCI6MjA4OTYwMjA0OH0.vogLREw_tcxi8Li-uX-2PwKlgal2FF2Fcg9jUwMMv7c';
 
-  /// Helper to check if the user has configured the keys
-  static bool get isConfigured => url != 'YOUR_SUPABASE_URL' && anonKey != 'YOUR_SUPABASE_ANON_KEY';
+  /// Set to false to force 100% offline, free mode
+  static bool get isConfigured => false;
 }

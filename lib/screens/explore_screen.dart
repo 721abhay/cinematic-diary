@@ -68,6 +68,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return Scaffold(
       backgroundColor: AppColors.cream,
       appBar: AppBar(
         backgroundColor: AppColors.cream,
@@ -110,7 +111,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
           ),
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
-            sliver: SliverList(
+            sliver: _isLoading 
+              ? const SliverToBoxAdapter(child: Center(child: CircularProgressIndicator(color: AppColors.charcoal)))
+              : SliverList(
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
                   final entry = _entries[index];
